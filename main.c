@@ -6,41 +6,41 @@
 #include "fft.h"
 
 
-unsigned int adcbuff[128] = {};  // ²ÉÑù½á¹û
-float vpp = 0;  // ·å·åÖµ
-float vrms = 0;  // ÓĞĞ§Öµ
-unsigned int new, old, diff, button_new, button_old, state;  // ¼ÇÂ¼°´¼ü×´Ì¬
-uint32_t timestamp = 0;  // Ê±¼ä´Á
-uint16_t capvalue_1 = 0;  // µÚÒ»´Î²¶×½Öµ
-uint16_t capvalue_2 = 0;  // µÚ¶ş´Î²¶×½Öµ
-uint16_t capvalue_3 = 0;  // µÚÈı´Î²¶×½Öµ
-uint32_t timestamp_1 = 0;  // µÚÒ»´ÎÊ±¼ä´Á
-uint32_t timestamp_2 = 0;  // µÚ¶ş´ÎÊ±¼ä´Á
-uint32_t timestamp_3 = 0;  // µÚÈı´ÎÊ±¼ä´Á
-uint32_t totaltime = 0;  // ÖÜÆÚ
-uint32_t a = 0;  // ÖÜÆÚÄÚ"1"µÄ³¤¶È
+unsigned int adcbuff[128] = {};  // é‡‡æ ·ç»“æœ
+float vpp = 0;  // å³°å³°å€¼
+float vrms = 0;  // æœ‰æ•ˆå€¼
+unsigned int new, old, diff, button_new, button_old, state;  // è®°å½•æŒ‰é”®çŠ¶æ€
+uint32_t timestamp = 0;  // æ—¶é—´æˆ³
+uint16_t capvalue_1 = 0;  // ç¬¬ä¸€æ¬¡æ•æ‰å€¼
+uint16_t capvalue_2 = 0;  // ç¬¬äºŒæ¬¡æ•æ‰å€¼
+uint16_t capvalue_3 = 0;  // ç¬¬ä¸‰æ¬¡æ•æ‰å€¼
+uint32_t timestamp_1 = 0;  // ç¬¬ä¸€æ¬¡æ—¶é—´æˆ³
+uint32_t timestamp_2 = 0;  // ç¬¬äºŒæ¬¡æ—¶é—´æˆ³
+uint32_t timestamp_3 = 0;  // ç¬¬ä¸‰æ¬¡æ—¶é—´æˆ³
+uint32_t totaltime = 0;  // å‘¨æœŸ
+uint32_t a = 0;  // å‘¨æœŸå†…"1"çš„é•¿åº¦
 uint8_t flag = 0;
-float freq = 0;  // ÆµÂÊ
-float duty = 0;  // Õ¼¿Õ±È
-float thd = 0;  // Ê§Õæ¶È
+float freq = 0;  // é¢‘ç‡
+float duty = 0;  // å ç©ºæ¯”
+float thd = 0;  // å¤±çœŸåº¦
 unsigned int cnt = 0;
 
 
-// Ö÷º¯Êı
+// ä¸»å‡½æ•°
 int main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;
-    ADC_Init();  // ³õÊ¼»¯ADC²ÉÑùÄ£¿é
-    SystemClock_Init();  // ³õÊ¼»¯Ê±ÖÓ
-    Pin_Init();  // Òı½ÅÅäÖÃ£¬P1.3ÉèÎª°´¼üÊäÈë
-    LCD_Init();  // ³õÊ¼»¯LCDÆÁ
-    Timer0_Init();  // ³õÊ¼»¯¼ÆÊ±Æ÷
-    Uart_Init();  // ³õÊ¼»¯´®¿ÚÍ¨ĞÅ
+    ADC_Init();  // åˆå§‹åŒ–ADCé‡‡æ ·æ¨¡å—
+    SystemClock_Init();  // åˆå§‹åŒ–æ—¶é’Ÿ
+    Pin_Init();  // å¼•è„šé…ç½®ï¼ŒP1.3è®¾ä¸ºæŒ‰é”®è¾“å…¥
+    LCD_Init();  // åˆå§‹åŒ–LCDå±
+    Timer0_Init();  // åˆå§‹åŒ–è®¡æ—¶å™¨
+    Uart_Init();  // åˆå§‹åŒ–ä¸²å£é€šä¿¡
     int i;
-    // ÊÂ¼şÑ­»·
+    // äº‹ä»¶å¾ªç¯
     while(1)
     {
-        // ¼ÇÂ¼°´¼üµÄ×´Ì¬¡ª¡ªÒ»¹²5¸ö×´Ì¬
+        // è®°å½•æŒ‰é”®çš„çŠ¶æ€â€”â€”ä¸€å…±4ä¸ªçŠ¶æ€
         new = 0;
         old = 0;
         diff = 0;
@@ -56,35 +56,29 @@ int main(void)
         if(button_new < button_old)
         {
             state += 1;
-            state %= 5;
+            state %= 4;
         }
 
-        // ¸ù¾İ°´¼ü×´Ì¬È·¶¨ÏÔÊ¾ÄÚÈİ
+        // æ ¹æ®æŒ‰é”®çŠ¶æ€ç¡®å®šæ˜¾ç¤ºå†…å®¹
         switch(state)
         {
-        case 0: // ¶ÓºÅ ĞÕÃû
-            clear_screen();  // ÇåÆÁ
-            display_GB2312_string(2,1,"2022F137×é");
-            display_GB2312_string(5,1,"Ò×Àş¾ê£¬ÕÔÃ¯ÇÕ");
-            delay(2000);
-            break;
-        case 1: // ÆµÂÊ Õ¼¿Õ±È
-            clear_screen();  // ÇåÆÁ
-            __bis_SR_register(GIE);  //¿ªÆôÖĞ¶Ï
-            // LCDÆÁÏÔÊ¾
-            display_GB2312_string(1, 1, "ÆµÂÊÎª£º");
+        case 0: // é¢‘ç‡ å ç©ºæ¯”
+            clear_screen();  // æ¸…å±
+            __bis_SR_register(GIE);  //å¼€å¯ä¸­æ–­
+            // LCDå±æ˜¾ç¤º
+            display_GB2312_string(1, 1, "é¢‘ç‡ä¸ºï¼š");
             display_GB2312_string(3, 41, "kHz");
-            display_GB2312_string(5, 1, "Õ¼¿Õ±ÈÎª£º");
+            display_GB2312_string(5, 1, "å ç©ºæ¯”ä¸ºï¼š");
             display_GB2312_string(7, 41, "%");
             flag = 1;
             cnt = 0;
-            while(flag);  // ²¶×½ÉÏÉıÑØºÍÏÂ½µÑØ
-            __bic_SR_register(GIE);  // ¹Ø±ÕÖĞ¶Ï
-            freq = ((float)(8000000.0) / totaltime) * 2.0;  // ¼ÆËãÆµÂÊ
-            duty = (float) a / totaltime;  // ¼ÆËãÕ¼¿Õ±È
+            while(flag);  // æ•æ‰ä¸Šå‡æ²¿å’Œä¸‹é™æ²¿
+            __bic_SR_register(GIE);  // å…³é—­ä¸­æ–­
+            freq = ((float)(8000000.0) / totaltime) * 2.0;  // è®¡ç®—é¢‘ç‡
+            duty = (float) a / totaltime;  // è®¡ç®—å ç©ºæ¯”
             display_float(3,1,freq / 1000.0);
             display_float(7, 1, duty * 100.0);
-            // ´®¿Ú´«ÊäÊı¾İ
+            // ä¸²å£ä¼ è¾“æ•°æ®
             uart_sendstring("freq:", 5);
             uart_sendfloat(freq / 1000.0);
             uart_sendstring("kHz\t", 4);
@@ -93,38 +87,39 @@ int main(void)
             uart_sendstring("%\r", 2);
             delay(20000);
             break;
-        case 2: // ·å·åÖµ ÓĞĞ§Öµ Ê§Õæ¶È
-            clear_screen();  // ÇåÆÁ
-            // LCDÏÔÊ¾
+                
+        case 1: // å³°å³°å€¼ æœ‰æ•ˆå€¼ å¤±çœŸåº¦
+            clear_screen();  // æ¸…å±
+            // LCDæ˜¾ç¤º
             display_GB2312_string(1,1,"Vpp:");
             display_GB2312_string(1,87,"V");
             display_GB2312_string(3,1,"Vrms:");
             display_GB2312_string(3,87,"V");
             display_GB2312_string(5,1,"THD:");
             display_GB2312_string(5,87,"%");
-            // ²ÉÑù
+            // é‡‡æ ·
             for(i=0;i<128;i++) StartADCConvert();
-            get_vpp();  // ¼ÆËã·å·åÖµºÍÓĞĞ§Öµ
-            // FFT±ä»»
+            get_vpp();  // è®¡ç®—å³°å³°å€¼å’Œæœ‰æ•ˆå€¼
+            // FFTå˜æ¢
             FFTR_SEQ();
             FFTR();
-            // ¼ÆËãÊ§Õæ¶È
+            // è®¡ç®—å¤±çœŸåº¦
             THD();
             display_float(1, 45, vpp);
             display_float(3, 45, vrms);
             display_float(5,45,thd);
-            // ¸ù¾İ·å·åÖµºÍÓĞĞ§ÖµµÄ±ÈÖµÅĞ¶Ï²¨µÄÀàĞÍ£¬ÒÀÊµ¼ÊÇé¿ö¶ø¶¨
+            // æ ¹æ®å³°å³°å€¼å’Œæœ‰æ•ˆå€¼çš„æ¯”å€¼åˆ¤æ–­æ³¢çš„ç±»å‹ï¼Œä¾å®é™…æƒ…å†µè€Œå®š
             if(vrms/vpp > 0.9)
             {
-                uart_sendstring("ÕıÏÒ²¨", 6);
+                uart_sendstring("æ­£å¼¦æ³¢", 6);
             }
             else if(vrms/vpp <= 0.65)
             {
-                uart_sendstring("Èı½Ç²¨", 6);
+                uart_sendstring("ä¸‰è§’æ³¢", 6);
             }
             else
             {
-                uart_sendstring("·½²¨", 4);
+                uart_sendstring("æ–¹æ³¢", 4);
             }
             uart_sendstring("Vpp:",5);
             uart_sendfloat(vpp);
@@ -133,21 +128,23 @@ int main(void)
             uart_sendstring("V     \n\r",8);
             delay(20000);
             break;
-        case 3: // ²¨ĞÎ
-            clear_screen();  // ÇåÆÁ
-            display_GB2312_string(1,1,"²¨ĞÎ£º");
-            for(i=0;i<128;i++) StartADCConvert();  // ²ÉÑù
-            display_wave(1024);  // »­³ö²¨ĞÎ
+                
+        case 2: // æ³¢å½¢
+            clear_screen();  // æ¸…å±
+            display_GB2312_string(1,1,"æ³¢å½¢ï¼š");
+            for(i=0;i<128;i++) StartADCConvert();  // é‡‡æ ·
+            display_wave(1024);  // ç”»å‡ºæ³¢å½¢
             delay(20000);
             break;
-        case 4: // ÆµÆ×
-            clear_screen();  // ÇåÆÁ
-            display_GB2312_string(1,1,"ÆµÆ×£º");
-            for(i=0;i<128;i++) StartADCConvert();  // ²ÉÑù
-            // FFT±ä»»
+                
+        case 3: // é¢‘è°±
+            clear_screen();  // æ¸…å±
+            display_GB2312_string(1,1,"é¢‘è°±ï¼š");
+            for(i=0;i<128;i++) StartADCConvert();  // é‡‡æ ·
+            // FFTå˜æ¢
             FFTR_SEQ();
             FFTR();
-            display_wave(adcbuff[0]);  // »­³öÆµÆ×
+            display_wave(adcbuff[0]);  // ç”»å‡ºé¢‘è°±
             delay(20000);
             break;
         default:
@@ -161,37 +158,37 @@ __interrupt void Time_Tick(void)
 {
     switch(TA1IV)
     {
-    case 0x02:  // ²¶×½±È½ÏÖĞ¶Ï1
+    case 0x02:  // æ•æ‰æ¯”è¾ƒä¸­æ–­1
         break;
-    case 0x04:  // ²¶×½±È½ÏÖĞ¶Ï2
+    case 0x04:  // æ•æ‰æ¯”è¾ƒä¸­æ–­2
         if(flag)
         {
             if(cnt == 0 && (TA1CCTL2 & CM_1))
             {
-                capvalue_1 = TA1CCR2;  // ±£´æµÚÒ»´Î²¶×½Öµ£¨ÉÏÉıÑØ£©
-                timestamp_1 = timestamp;  // ±£´æµÚÒ»´ÎÊ±¼ä´Á
+                capvalue_1 = TA1CCR2;  // ä¿å­˜ç¬¬ä¸€æ¬¡æ•æ‰å€¼ï¼ˆä¸Šå‡æ²¿ï¼‰
+                timestamp_1 = timestamp;  // ä¿å­˜ç¬¬ä¸€æ¬¡æ—¶é—´æˆ³
                 cnt = 1;
-                TA1CCTL2 |= CM_2;  // ÏÂÒ»´Î²¶×½ÏÂ½µÑØ
+                TA1CCTL2 |= CM_2;  // ä¸‹ä¸€æ¬¡æ•æ‰ä¸‹é™æ²¿
             }
             else if(cnt == 1 && (TA1CCTL2 & CM_2))
             {
-                capvalue_2 = TA1CCR2;  // ±£´æµÚ¶ş´Î²¶×½Öµ£¨ÏÂ½µÑØ£©
-                timestamp_2 = timestamp;  // ±£´æµÚ¶ş´ÎÊ±¼ä´Á
+                capvalue_2 = TA1CCR2;  // ä¿å­˜ç¬¬äºŒæ¬¡æ•æ‰å€¼ï¼ˆä¸‹é™æ²¿ï¼‰
+                timestamp_2 = timestamp;  // ä¿å­˜ç¬¬äºŒæ¬¡æ—¶é—´æˆ³
                 cnt = 2;
-                TA1CCTL2 |= CM_1;  // ÏÂÒ»´Î²¶×½ÉÏÉıÑØ
+                TA1CCTL2 |= CM_1;  // ä¸‹ä¸€æ¬¡æ•æ‰ä¸Šå‡æ²¿
             }
             else if(cnt == 2 && (TA1CCTL2 & CM_1))
             {
-                capvalue_3 = TA1CCR2;  // ±£´æµÚÈı´Î²¶×½Öµ£¨ÉÏÉıÑØ£©
-                timestamp_3 = timestamp;  // ±£´æµÚÈı´ÎÊ±¼ä´Á
+                capvalue_3 = TA1CCR2;  // ä¿å­˜ç¬¬ä¸‰æ¬¡æ•æ‰å€¼ï¼ˆä¸Šå‡æ²¿ï¼‰
+                timestamp_3 = timestamp;  // ä¿å­˜ç¬¬ä¸‰æ¬¡æ—¶é—´æˆ³
                 cnt = 0;
                 flag = 0;
-                totaltime = (timestamp_3 - timestamp_1) * 50000 + capvalue_3 - capvalue_1;  // ¼ÆËã×ÜÊ±¼ä
-                a = (timestamp_2 - timestamp_1) * 50000 +  capvalue_2 - capvalue_1;  // ¼ÆËã·Ç¿ÕÊ±¼ä
+                totaltime = (timestamp_3 - timestamp_1) * 50000 + capvalue_3 - capvalue_1;  // è®¡ç®—æ€»æ—¶é—´
+                a = (timestamp_2 - timestamp_1) * 50000 +  capvalue_2 - capvalue_1;  // è®¡ç®—éç©ºæ—¶é—´
             }
         }
         break;
-    case 0x0A:  // Òç³öÖĞ¶Ï
+    case 0x0A:  // æº¢å‡ºä¸­æ–­
         timestamp ++;
         break;
     default:
